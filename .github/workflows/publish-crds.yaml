@@ -1,0 +1,56 @@
+name: Publish CRDs Helm Chart
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'charts/actions-runner-crds'
+      - '.github/workflows/publish-crds.yaml'
+  workflow_dispatch:
+
+env:
+  HELM_VERSION: v3.8.0
+
+permissions:
+  contents: read
+
+jobs:
+  publish-helm-chart-crds:
+    name: Publish Helm chart for Actions Runner CRDs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Resolve parameters 
+        id: resolve_parameters
+        run: |
+          resolvedRef="${{ github.ref }}"
+          echo "INFO: Resolving short SHA for $resolvedRef"
+          echo "short_sha=$(git rev-parse --short $resolvedRef)" >> $GITHUB_OUTPUT
+          echo "INFO: Normalizing repository name (lowercase)"
+          echo "repository_owner=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT 
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3.3
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Publish new helm chart for auto-scaling-runner-set
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
+
+          CHART_VERSION_TAG=$(cat charts/actions-runner-crds/Chart.yaml | grep version: | cut -d " " -f 2)
+          echo "CHART_VERSION_TAG=${CHART_VERSION_TAG}" >> $GITHUB_ENV
+          helm package charts/actions-runner-crds/ --version="${CHART_VERSION_TAG}"
+          helm push actions-runner-crds-"${CHART_VERSION_TAG}".tgz oci://ghcr.io/${{ steps.resolve_parameters.outputs.repository_owner }}/actions-runner-controller-charts
+
+      - name: Job summary
+        run: |
+          echo "New helm chart for actions-runner-crds published successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Parameters:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Ref: ${{ steps.resolve_parameters.outputs.resolvedRef }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Short SHA: ${{ steps.resolve_parameters.outputs.short_sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Actions Runner CRDs Chart version: ${{ env.CHART_VERSION_TAG }}" >> $GITHUB_STEP_SUMMARY
