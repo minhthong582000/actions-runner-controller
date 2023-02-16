@@ -1,4 +1,4 @@
-name: Validate Helm Chart
+name: (crds) Validate Helm Chart
 
 on:
   pull_request:
@@ -6,19 +6,17 @@ on:
       - master
     paths:
       - 'charts/**'
-      - '.github/workflows/arc-validate-chart.yaml'
-      - '!charts/actions-runner-controller/docs/**'
+      - '.github/workflows/arc-crds-validate-chart.yaml'
+      - '!charts/actions-runner-controller/**'
       - '!**.md'
-      - '!charts/actions-runner-controller-crds/**'
       - '!charts/gha-runner-scale-set-controller/**'
       - '!charts/gha-runner-scale-set/**'
   push:
     paths:
       - 'charts/**'
-      - '.github/workflows/arc-validate-chart.yaml'
-      - '!charts/actions-runner-controller/docs/**'
+      - '.github/workflows/arc-crds-validate-chart.yaml'
+      - '!charts/actions-runner-controller/**'
       - '!**.md'
-      - '!charts/actions-runner-controller-crds/**'
       - '!charts/gha-runner-scale-set-controller/**'
       - '!charts/gha-runner-scale-set/**'
   workflow_dispatch:
@@ -102,4 +100,4 @@ jobs:
       - name: Run chart-testing (install)
         if: steps.list-changed.outputs.changed == 'true'
         run: |
-          ct install --config charts/.ci/ct-config.yaml
+          ct install --config charts/.ci/ct-config-crds.yaml
