@@ -4,3 +4,7 @@ lint-conf: charts/.ci/lint-config.yaml
 chart-repos:
   - jetstack=https://charts.jetstack.io
 check-version-increment: false # Disable checking that the chart version has been bumped
+excluded-charts:
+  # The CRDs in this chart are already installed by the controller chart,
+  # the chart-testing workflow will fail if this chart is installed.
+  - actions-runner-crds
